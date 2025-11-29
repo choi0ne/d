@@ -5,6 +5,7 @@ import ImageToPromptEditor from './components/ImageToPromptEditor';
 import SettingsModal from './components/SettingsModal';
 import { SparklesIcon, CodeBracketIcon, PhotoIcon } from './components/Icons';
 import useLocalStorage from './hooks/useLocalStorage';
+import useGoogleAuth from './hooks/useGoogleAuth';
 
 type EditorMode = 'prompt' | 'image-prompt' | 'code';
 
@@ -17,10 +18,13 @@ interface ApiKeys {
 const App: React.FC = () => {
   const [mode, setMode] = useState<EditorMode>('prompt');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  
+
   const [geminiApiKey, setGeminiApiKey] = useLocalStorage<string>('gemini-api-key', '');
   const [googleApiKey, setGoogleApiKey] = useLocalStorage<string>('google-api-key', '');
   const [googleClientId, setGoogleClientId] = useLocalStorage<string>('google-client-id', '');
+
+  // Google authentication with auto-refresh
+  const { isAuthenticated, signIn, signOut } = useGoogleAuth(googleClientId);
 
   const isKeyReady = !!geminiApiKey;
 
@@ -86,13 +90,31 @@ const App: React.FC = () => {
                   <span>코드 에디터</span>
                 </button>
               </nav>
-              <button
-                onClick={() => setIsSettingsModalOpen(true)}
-                className="mb-1 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-400"
-                aria-label="설정 열기"
-              >
-                설정
-              </button>
+              <div className="flex items-center gap-2">
+                {googleClientId && (
+                  <button
+                    onClick={isAuthenticated ? signOut : signIn}
+                    className="mb-1 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-400"
+                    aria-label={isAuthenticated ? '로그아웃' : '로그인'}
+                  >
+                    {isAuthenticated ? (
+                      <>
+                        <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        로그아웃
+                      </>
+                    ) : (
+                      '구글 로그인'
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="mb-1 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-400"
+                  aria-label="설정 열기"
+                >
+                  설정
+                </button>
+              </div>
             </div>
             <main className="mt-4">{renderEditor()}</main>
           </div>
